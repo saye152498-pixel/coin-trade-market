@@ -1,0 +1,8 @@
+{
+  "name": "coin-trade-market-flask",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": ".venv/bin/python app.py"
+  }
+}
