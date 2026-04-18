@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Sign In" if mode == "signin" else "Sign Up" }}{% endblock %}
+
+{% block content %}
+<main>
+  <section class="auth-page">
+    <article class="auth-card card">
+      <p class="eyebrow">{{ "Sign In" if mode == "signin" else "Sign Up" }}</p>
+      <h2>{{ "기존 계정으로 로그인" if mode == "signin" else "새 계정 생성" }}</h2>
+      <p class="hero-text">
+        실제 인증 저장은 아직 연결하지 않았고, PDF 요구사항의 회원가입/로그인
+        진입 화면까지 Flask 라우팅으로 구현된 상태입니다.
+      </p>
+
+      <form class="auth-form">
+        {% if mode == "signup" %}
+        <label for="username">아이디</label>
+        <input id="username" type="text" placeholder="username" />
+        {% endif %}
+
+        <label for="email">이메일</label>
+        <input id="email" type="email" placeholder="user@example.com" />
+
+        <label for="password">비밀번호</label>
+        <input id="password" type="password" placeholder="********" />
+
+        <button type="button" class="primary wide">
+          {{ "로그인" if mode == "signin" else "회원가입" }}
+        </button>
+      </form>
+    </article>
+  </section>
+</main>
+{% endblock %}

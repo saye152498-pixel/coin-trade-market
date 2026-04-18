@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Coin Trade Market{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="{{ url_for('home') }}">
+          <div class="brand-mark">CT</div>
+          <div>
+            <p class="eyebrow">Flask Coin Trade Market</p>
+            <h1>coin trade</h1>
+          </div>
+        </a>
+
+        <nav class="nav">
+          <a href="{{ url_for('home') }}">홈</a>
+          {% for item in all_markets %}
+          <a href="{{ url_for('market_detail', symbol=item.symbol) }}">{{ item.symbol }}</a>
+          {% endfor %}
+        </nav>
+
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          <span>Market Live</span>
+        </div>
+
+        <div class="auth-actions">
+          <a class="ghost" href="{{ url_for('signin') }}">Sign in</a>
+          <a class="primary" href="{{ url_for('signup') }}">Sign up</a>
+        </div>
+      </header>
+
+      <section class="ticker-strip">
+        <div class="ticker-track">
+          {% for item in all_markets %}
+          <a class="ticker-item" href="{{ url_for('market_detail', symbol=item.symbol) }}">
+            <strong>{{ item.symbol }}</strong>
+            <span>₩{{ item.price }}</span>
+            <em class="{{ 'up' if item.change_pct >= 0 else 'down' }}">
+              {{ '+' if item.change_pct >= 0 else '' }}{{ item.change_pct }}%
+            </em>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>

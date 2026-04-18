@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}{{ market.symbol }} Market{% endblock %}
+
+{% block content %}
+<main>
+  <section class="hero market-hero">
+    <div class="hero-copy">
+      <p class="eyebrow">{{ market.name }} Market Terminal</p>
+      <h2>{{ market.pair }} 실시간 트레이딩 터미널</h2>
+      <p class="hero-text">{{ market.description }}</p>
+
+      <div class="hero-actions">
+        <a class="primary large" href="#trade">거래 패널</a>
+        <a class="ghost large" href="#history">히스토리</a>
+      </div>
+
+      <div class="hero-metrics">
+        <article>
+          <span>현재 가격</span>
+          <strong>₩{{ market.price }}</strong>
+          <small>{{ '+' if market.change_pct >= 0 else '' }}{{ market.change_pct }}% today</small>
+        </article>
+        <article>
+          <span>고가 / 저가</span>
+          <strong>₩{{ market.high }} / ₩{{ market.low }}</strong>
+          <small>시가 ₩{{ market.open }}</small>
+        </article>
+        <article>
+          <span>거래량</span>
+          <strong>{{ market.volume }}</strong>
+          <small>마켓 보유 {{ market.market_supply }} coin</small>
+        </article>
+      </div>
+    </div>
+
+    <aside class="hero-panel">
+      <div class="status-card">
+        <p class="panel-title">Account Snapshot</p>
+        <div class="status-grid">
+          <div>
+            <span>User</span>
+            <strong>{{ user_profile.username }}</strong>
+          </div>
+          <div>
+            <span>KRW Balance</span>
+            <strong>₩{{ "{:,}".format(user_profile.cash_balance) }}</strong>
+          </div>
+          <div>
+            <span>{{ market.symbol }} Position</span>
+            <strong>{{ user_profile.coins.get(market.symbol, 0) }}</strong>
+          </div>
+          <div>
+            <span>Equity</span>
+            <strong>₩{{ "{:,}".format(user_profile.portfolio_value) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-book">
+        <div class="mini-book-head">
+          <p>Order Book</p>
+          <span>Live</span>
+        </div>
+        {% for ask in market.order_book.asks %}
+        <div class="book-row ask-row">
+          <span>SELL {{ ask.amount }}</span>
+          <div class="book-meta">
+            <em class="down">ASK</em>
+            <strong>₩{{ ask.price }}</strong>
+          </div>
+        </div>
+        {% endfor %}
+        <div class="book-row current">
+          <span>LAST TRADE</span>
+          <div class="book-meta">
+            <em class="{{ 'up' if market.change_pct >= 0 else 'down' }}">
+              {{ '+' if market.change_pct >= 0 else '' }}{{ market.change_pct }}%
+            </em>
+            <strong>₩{{ market.price }}</strong>
+          </div>
+        </div>
+        {% for bid in market.order_book.bids %}
+        <div class="book-row buy">
+          <span>BUY {{ bid.amount }}</span>
+          <div class="book-meta">
+            <em class="up">BID</em>
+            <strong>₩{{ bid.price }}</strong>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </aside>
+  </section>
+
+  <section class="market-section">
+    <div class="section-heading">
+      <p class="eyebrow">Price Trend</p>
+      <h3>{{ market.symbol }} 마켓 시세 그래프와 공급 요약</h3>
+    </div>
+
+    <div class="market-grid">
+      <article class="chart-card card">
+        <div class="card-head">
+          <div>
+            <p>Price Action</p>
+            <h4>{{ market.pair }}</h4>
+          </div>
+          <div class="trend-chip {{ 'up' if market.change_pct >= 0 else 'down' }}">
+            {{ '+' if market.change_pct >= 0 else '' }}{{ market.change_pct }}%
+          </div>
+        </div>
+        <svg viewBox="0 0 640 260" class="chart" aria-label="{{ market.pair }} price history">
+          <defs>
+            <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="rgba(30, 168, 150, 0.48)" />
+              <stop offset="100%" stop-color="rgba(30, 168, 150, 0)" />
+            </linearGradient>
+          </defs>
+          <g class="chart-grid">
+            <line x1="20" y1="40" x2="620" y2="40" />
+            <line x1="20" y1="95" x2="620" y2="95" />
+            <line x1="20" y1="150" x2="620" y2="150" />
+            <line x1="20" y1="205" x2="620" y2="205" />
+          </g>
+          <path class="chart-area" d="{{ chart_area }}" />
+          <path class="chart-line" d="{{ chart_path }}" />
+        </svg>
+        <div class="chart-foot">
+          <span>Open ₩{{ market.open }}</span>
+          <span>High ₩{{ market.high }}</span>
+          <span>Low ₩{{ market.low }}</span>
+          <span>Volume {{ market.volume }}</span>
+        </div>
+      </article>
+
+      <article class="summary-card card">
+        <p class="panel-title">Liquidity Summary</p>
+        <div class="summary-list">
+          <div>
+            <span>Genesis Supply</span>
+            <strong>100 coin</strong>
+          </div>
+          <div>
+            <span>Available Supply</span>
+            <strong>{{ market.market_supply }} coin</strong>
+          </div>
+          <div>
+            <span>User Holdings</span>
+            <strong>{{ market.user_supply }} coin</strong>
+          </div>
+          <div>
+            <span>Spread</span>
+            <strong>₩{{ market.spread }}</strong>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="trade-section" id="trade">
+    <div class="section-heading">
+      <p class="eyebrow">Trade Console</p>
+      <h3>{{ market.symbol }} 개별 마켓 주문 패널</h3>
+    </div>
+
+    <div class="trade-grid">
+      <article class="wallet-card card">
+        <div class="card-head">
+          <div>
+            <p>Wallet</p>
+            <h4>내 자산 현황</h4>
+          </div>
+          <span class="tag">Signed User</span>
+        </div>
+        <div class="wallet-balance">
+          <div>
+            <span>KRW Wallet</span>
+            <strong>₩{{ "{:,}".format(user_profile.cash_balance) }}</strong>
+          </div>
+          <div>
+            <span>{{ market.symbol }} Wallet</span>
+            <strong>{{ user_profile.coins.get(market.symbol, 0) }}</strong>
+          </div>
+        </div>
+        <div class="ledger">
+          <div><span>최근 입금</span><strong>+₩300,000</strong></div>
+          <div><span>최근 매수</span><strong>-₩184,800</strong></div>
+          <div><span>판매 등록</span><strong>{{ market.sell_posts[0].amount }} coin</strong></div>
+          <div><span>출금 가능</span><strong>₩435,200</strong></div>
+        </div>
+      </article>
+
+      <article class="trade-panel card" data-market-price="{{ market.price }}">
+        <div class="tabs">
+          <button class="tab active" data-tab="buy">Buy {{ market.symbol }}</button>
+          <button class="tab" data-tab="sell">Sell Post</button>
+          <button class="tab" data-tab="wallet">Deposit / Withdraw</button>
+        </div>
+
+        <div class="tab-panel active" data-panel="buy">
+          <div class="form-row">
+            <label for="buy-amount">매수 수량</label>
+            <input id="buy-amount" type="range" min="1" max="20" value="6" />
+          </div>
+          <div class="quote-box">
+            <div><span>시장가</span><strong>₩{{ market.price }}</strong></div>
+            <div><span>예상 체결금액</span><strong id="buy-total">₩{{ market.price * 6 }}</strong></div>
+          </div>
+          <button class="primary wide">마켓에서 {{ market.symbol }} 매수</button>
+        </div>
+
+        <div class="tab-panel" data-panel="sell">
+          <div class="sell-grid">
+            <div class="field">
+              <label for="sell-qty">판매 수량</label>
+              <input id="sell-qty" type="number" value="4.5" />
+            </div>
+            <div class="field">
+              <label for="sell-price">희망 가격</label>
+              <input id="sell-price" type="number" value="{{ market.price + market.spread }}" />
+            </div>
+          </div>
+          <div class="quote-box">
+            <div><span>내 보유량</span><strong>{{ user_profile.coins.get(market.symbol, 0) }}</strong></div>
+            <div><span>등록 후 상태</span><strong>판매 대기</strong></div>
+          </div>
+          <button class="secondary wide">판매 게시글 등록</button>
+        </div>
+
+        <div class="tab-panel" data-panel="wallet">
+          <div class="wallet-actions">
+            <article>
+              <span>Deposit</span>
+              <strong>₩500,000</strong>
+              <button class="ghost wide">입금하기</button>
+            </article>
+            <article>
+              <span>Withdraw</span>
+              <strong>₩200,000</strong>
+              <button class="ghost wide">출금하기</button>
+            </article>
+          </div>
+        </div>
+      </article>
+
+      <article class="order-card card">
+        <div class="card-head">
+          <div>
+            <p>Market Listings</p>
+            <h4>{{ market.symbol }} 판매 게시글</h4>
+          </div>
+          <span class="tag neutral">Marketplace View</span>
+        </div>
+        <div class="orders">
+          <div class="orders-head">
+            <span>판매자</span>
+            <span>수량</span>
+            <span>가격</span>
+          </div>
+          {% for post in market.sell_posts %}
+          <div class="orders-row">
+            <span>{{ post.seller }}</span>
+            <span>{{ post.amount }} coin</span>
+            <strong>₩{{ post.price }}</strong>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="market-microstats">
+          <div><span>Best Ask</span><strong>₩{{ market.order_book.asks[0].price }}</strong></div>
+          <div><span>Best Bid</span><strong>₩{{ market.order_book.bids[0].price }}</strong></div>
+          <div><span>Spread</span><strong>₩{{ market.spread }}</strong></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="history-section" id="history">
+    <div class="section-heading">
+      <p class="eyebrow">Transaction History</p>
+      <h3>{{ market.symbol }} 거래 이력과 가격 변화 기록</h3>
+    </div>
+
+    <div class="history-grid">
+      <article class="history-card card">
+        <table>
+          <thead>
+            <tr>
+              <th>시간</th>
+              <th>유형</th>
+              <th>수량</th>
+              <th>가격</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in market.history %}
+            <tr>
+              <td>{{ row.time }}</td>
+              <td>{{ row.type }}</td>
+              <td>{{ row.amount }}</td>
+              <td>{{ row.price }}</td>
+              <td><span class="pill {{ row.tone }}">{{ row.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+
+      <article class="logic-card card">
+        <p class="panel-title">Requirement Mapping</p>
+        <div class="logic-list">
+          <article>
+            <strong>01</strong>
+            <p>개별 마켓 라우트로 각 코인 마켓 진입 가능</p>
+          </article>
+          <article>
+            <strong>02</strong>
+            <p>비로그인 상태에서도 마켓 가격과 추세 확인 가능</p>
+          </article>
+          <article>
+            <strong>03</strong>
+            <p>로그인 사용자는 입금, 매수, 매도 등록, 출금 흐름 확인 가능</p>
+          </article>
+          <article>
+            <strong>04</strong>
+            <p>가격 이력과 거래 기록을 표 형태로 함께 노출</p>
+          </article>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+{% endblock %}
